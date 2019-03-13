@@ -32,6 +32,7 @@
 
 #import "OEGridGameCell.h"
 #import "OEGridViewFieldEditor.h"
+#import "OEBackgroundNoisePattern.h"
 #import "OECoverGridDataSourceItem.h"
 
 #pragma mark - ImageKit Private Headers
@@ -44,6 +45,7 @@
 #pragma mark -
 NSSize const defaultGridSize = (NSSize){26+142, 143};
 NSString *const OEImageBrowserGroupSubtitleKey = @"OEImageBrowserGroupSubtitleKey";
+NSString *const OECoverGridViewGlossDisabledKey = @"OECoverGridViewGlossDisabledKey";
 
 //Removed the Category (ScaleFactorAdditions) in the IKCGRenderer implementation, for Compatibility with MacOS 10.14(beta 5)
 //With this temporary fix the App compiles in XCode 10b and Runs without crashing on startup on Mojave
@@ -76,14 +78,22 @@ NSString *const OEImageBrowserGroupSubtitleKey = @"OEImageBrowserGroupSubtitleKe
 
 @implementation OEGridView
 
-static NSImage *lightingImage;
+static IKImageWrapper *lightingImage, *noiseImageHighRes, *noiseImage;
+
+//IKImageWrapper *lightingImage, *noiseImageHighRes, *noiseImage;
 
 + (void)initialize
 {
     if([self class] != [OEGridView class])
         return;
 
-    lightingImage = [NSImage imageNamed:@"background_lighting"];
+     NSImage *nslightingImage = [NSImage imageNamed:@"background_lighting"];	
+    lightingImage = [IKImageWrapper imageWithNSImage:nslightingImage];
+    
+    OEBackgroundNoisePatternCreate();	
+    OEBackgroundHighResolutionNoisePatternCreate();	
+     noiseImage = [IKImageWrapper imageWithCGImage:OEBackgroundNoiseImageRef];	
+    noiseImageHighRes = [IKImageWrapper imageWithCGImage:OEBackgroundHighResolutionNoiseImageRef];
 }
 
 - (instancetype)init
@@ -700,6 +710,9 @@ static NSImage *lightingImage;
 - (void)drawDragBackground
 {}
 
+
+
+
 - (void)drawDragOverlays
 {
     id <IKRenderer> renderer = [self renderer];
@@ -720,15 +733,40 @@ static NSImage *lightingImage;
     [renderer drawRoundedRect:dragRect radius:8.0*scaleFactor lineWidth:2.0*scaleFactor cacheIt:YES];
 }
 
+- (void)drawBackground:(struct CGRect)arg1	
+{	
+    const id <IKRenderer> renderer = [self renderer];	
+       const CGFloat scaleFactor = [renderer scaleFactor];
+     arg1 = [[self enclosingScrollView] documentVisibleRect];	
+     [renderer drawImage:lightingImage inRect:arg1 fromRect:NSZeroRect alpha:1.0];	
+	
+
+ IKImageWrapper *image = noiseImageHighRes;	
+    if(scaleFactor != 1) image = noiseImageHighRes;	
+     NSSize imageSize = {image.size.width/scaleFactor, image.size.height/scaleFactor};	
+    for(CGFloat y=NSMinY(arg1); y < NSMaxY(arg1); y+=imageSize.height)	
+        for(CGFloat x=NSMinX(arg1); x < NSMaxX(arg1); x+=imageSize.width)	
+            [renderer drawImage:image inRect:(CGRect){{x,y},imageSize} fromRect:NSZeroRect alpha:1.0]	
+            ;
+}
+
 - (void)drawGroupsOverlays
 {
     [super drawGroupsOverlays];
 
     const id <IKRenderer> renderer = [self renderer];
+    const NSColor *fullColor  = [[NSColor blackColor] colorWithAlphaComponent:0.4];
+    const NSColor *emptyColor = [NSColor clearColor];
     const NSRect visibleRect = [[self enclosingScrollView] documentVisibleRect];
     
+    const NSRect gradientRectBottom = NSMakeRect(0.0, NSMinY(visibleRect), NSWidth(visibleRect), 4.5);
+    const NSRect gradientRectTop = NSMakeRect(0.0, NSMaxY(visibleRect) - 4.5, NSWidth(visibleRect), 4.5); //4.0
+    const NSRect gradientRectLeft = NSMakeRect(0.0, NSMaxY(visibleRect) - 0.0, NSWidth(visibleRect), 0.0);
+    [renderer fillGradientInRect:gradientRectBottom bottomColor:fullColor topColor:emptyColor];
+    [renderer fillGradientInRect:gradientRectTop bottomColor:emptyColor   topColor:fullColor];
+    
     [renderer setColorRed:0.0 Green:0.0 Blue:0.0 Alpha:1.0];
-    [renderer fillRect:NSMakeRect(0, NSMinY(visibleRect)-10, NSWidth(visibleRect), 10)];
+    [renderer fillRect:NSMakeRect(0, NSMinY(visibleRect)-12, NSWidth(visibleRect), -12)];
 }
 
 #pragma mark - Groups
