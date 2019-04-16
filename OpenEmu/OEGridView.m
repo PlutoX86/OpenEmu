@@ -32,6 +32,7 @@
 
 #import "OEGridGameCell.h"
 #import "OEGridViewFieldEditor.h"
+#import "OEBackgroundNoisePattern.h"
 #import "OECoverGridDataSourceItem.h"
 
 #pragma mark - ImageKit Private Headers
@@ -77,7 +78,9 @@ NSString *const OECoverGridViewGlossDisabledKey = @"OECoverGridViewGlossDisabled
 
 @implementation OEGridView
 
-static IKImageWrapper *lightingImage;
+static IKImageWrapper *lightingImage, *noiseImageHighRes, *noiseImage;
+
+//IKImageWrapper *lightingImage, *noiseImageHighRes, *noiseImage;
 
 + (void)initialize
 {
@@ -86,6 +89,11 @@ static IKImageWrapper *lightingImage;
 
      NSImage *nslightingImage = [NSImage imageNamed:@"background_lighting"];	
     lightingImage = [IKImageWrapper imageWithNSImage:nslightingImage];
+    
+    OEBackgroundNoisePatternCreate();	
+    OEBackgroundHighResolutionNoisePatternCreate();	
+     noiseImage = [IKImageWrapper imageWithCGImage:OEBackgroundNoiseImageRef];	
+    noiseImageHighRes = [IKImageWrapper imageWithCGImage:OEBackgroundHighResolutionNoiseImageRef];
 }
 
 - (instancetype)init
@@ -728,10 +736,18 @@ static IKImageWrapper *lightingImage;
 - (void)drawBackground:(struct CGRect)arg1	
 {	
     const id <IKRenderer> renderer = [self renderer];	
-
+       const CGFloat scaleFactor = [renderer scaleFactor];
      arg1 = [[self enclosingScrollView] documentVisibleRect];	
      [renderer drawImage:lightingImage inRect:arg1 fromRect:NSZeroRect alpha:1.0];	
 	
+
+ IKImageWrapper *image = noiseImageHighRes;	
+    if(scaleFactor != 1) image = noiseImageHighRes;	
+     NSSize imageSize = {image.size.width/scaleFactor, image.size.height/scaleFactor};	
+    for(CGFloat y=NSMinY(arg1); y < NSMaxY(arg1); y+=imageSize.height)	
+        for(CGFloat x=NSMinX(arg1); x < NSMaxX(arg1); x+=imageSize.width)	
+            [renderer drawImage:image inRect:(CGRect){{x,y},imageSize} fromRect:NSZeroRect alpha:1.0]	
+            ;
 }
 
 - (void)drawGroupsOverlays
@@ -744,7 +760,7 @@ static IKImageWrapper *lightingImage;
     const NSRect visibleRect = [[self enclosingScrollView] documentVisibleRect];
     
     const NSRect gradientRectBottom = NSMakeRect(0.0, NSMinY(visibleRect), NSWidth(visibleRect), 4.5);
-    const NSRect gradientRectTop = NSMakeRect(0.0, NSMaxY(visibleRect) - 4.5, NSWidth(visibleRect), 4.5); //4.0
+    const NSRect gradientRectTop = NSMakeRect(0.0, NSMaxY(visibleRect) - 4.0, NSWidth(visibleRect), 4.0); //4.0
     const NSRect gradientRectLeft = NSMakeRect(0.0, NSMaxY(visibleRect) - 0.0, NSWidth(visibleRect), 0.0);
     [renderer fillGradientInRect:gradientRectBottom bottomColor:fullColor topColor:emptyColor];
     [renderer fillGradientInRect:gradientRectTop bottomColor:emptyColor   topColor:fullColor];

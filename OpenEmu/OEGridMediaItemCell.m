@@ -226,8 +226,8 @@ static NSDictionary *disabledActions = nil;
     _backgroundLayer = [CALayer layer];
     [_backgroundLayer setActions:disabledActions];
     [_backgroundLayer setShadowColor:[[NSColor blackColor] CGColor]];
-    [_backgroundLayer setShadowOffset:CGSizeMake(0.0, -1.5)];
-    [_backgroundLayer setShadowRadius:2.0];
+    [_backgroundLayer setShadowOffset:CGSizeMake(0.0, -2.0)];
+    [_backgroundLayer setShadowRadius:3.0];
     [_backgroundLayer setContentsGravity:kCAGravityResize];
 }
 
@@ -323,7 +323,7 @@ static NSDictionary *disabledActions = nil;
         {
             _lastWindowActive = windowActive;
             
-            CGRect selectionFrame = CGRectInset(relativeImageFrame, -6.0, -6.0);
+            CGRect selectionFrame = CGRectInset(relativeImageFrame, -5.0, -5.0);
             CALayer *selectionLayer = [CALayer layer];
             selectionLayer.actions = disabledActions;
             selectionLayer.frame = selectionFrame;
@@ -344,7 +344,7 @@ static NSDictionary *disabledActions = nil;
             
             selectionLayer.borderWidth = 4.0;
             selectionLayer.borderColor = _lastWindowActive ? selectionColor.CGColor : inactiveSelectionColor.CGColor;
-            selectionLayer.cornerRadius = 3.0;
+            selectionLayer.cornerRadius = 4.0;
             
             [_foregroundLayer addSublayer:selectionLayer];
             
@@ -414,13 +414,13 @@ static NSDictionary *disabledActions = nil;
         NSGraphicsContext *currentContext = [NSGraphicsContext currentContext];	
          // Draw gloss image fit proportionally within the cell	
         NSImage *boxGlossImage = [NSImage imageNamed:@"box_gloss"];	
-        CGRect   boxGlossFrame = CGRectMake(0.0, 0.0 , size.width, floor((((size.height+(size.width/1.745))) * OEGridCellGlossWidthToHeightRatio)/1.745));	
+        CGRect   boxGlossFrame = CGRectMake(0.0, 0.0 , size.width, floor((((size.height+(size.width/1.95))) * OEGridCellGlossWidthToHeightRatio)/1.55));	
          boxGlossFrame.origin.y = size.height - CGRectGetHeight(boxGlossFrame);		
          [boxGlossImage drawInRect:boxGlossFrame fromRect:NSZeroRect operation:NSCompositeCopy fraction:0.85];	
          [currentContext saveGraphicsState];	
         [currentContext setShouldAntialias:YES];	
-         const NSRect bounds = NSMakeRect(0.0, 0.0, size.width-0.25, size.height-0.5);	
-        [[NSColor colorWithCalibratedWhite:1.0 alpha:0.3] setStroke];	
+         const NSRect bounds = NSMakeRect(0.0, 0.0, size.width-0.5, size.height-0.5);	
+        [[NSColor colorWithCalibratedWhite:1.0 alpha:0.4] setStroke];	
         [[NSBezierPath bezierPathWithRect:NSOffsetRect(bounds, 0.0, -1.0)] stroke];	
          [[NSColor blackColor] setStroke];	
         NSBezierPath *path = [NSBezierPath bezierPathWithRect:bounds];	
